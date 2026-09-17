@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel de Administración - Tienda</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #0f0f23;
+      --card: rgba(255,255,255,0.05);
+      --border: rgba(255,255,255,0.1);
+      --text: #f0f0f0;
+      --text2: #a0a0b0;
+      --accent: #6c63ff;
+      --accent-glow: rgba(108,99,255,0.4);
+      --green: #00c9a7;
+      --red: #ff6b6b;
+      --yellow: #ffd93d;
+      --blue: #4fc3f7;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    .bg-anim { position: fixed; inset: 0; z-index: -1; overflow: hidden; }
+    .bg-anim .c { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.25; animation: float 20s infinite ease-in-out; }
+    .bg-anim .c:nth-child(1) { width: 500px; height: 500px; background: #6c63ff; top: -150px; left: -150px; }
+    .bg-anim .c:nth-child(2) { width: 400px; height: 400px; background: #e91e63; bottom: -100px; right: -100px; animation-delay: -7s; }
+    .bg-anim .c:nth-child(3) { width: 350px; height: 350px; background: #00c9a7; top: 50%; left: 60%; animation-delay: -12s; }
+    @keyframes float { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(40px,-40px) scale(1.1)} }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 30px 20px; }
+
+    .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; animation: fadeUp 0.5s; }
+    .top-bar h1 { font-size: 1.8rem; font-weight: 800; background: linear-gradient(135deg, #6c63ff, #e91e63); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .top-bar .links { display: flex; gap: 12px; }
+    .top-bar .links a { padding: 10px 18px; border-radius: 12px; background: var(--card); border: 1px solid var(--border); color: var(--text2); text-decoration: none; font-size: 0.85rem; font-weight: 500; transition: all 0.3s; display: flex; align-items: center; gap: 8px; }
+    .top-bar .links a:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+    .top-bar .links a.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; animation: fadeUp 0.6s; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; animation: fadeUp 0.7s; }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 24px; backdrop-filter: blur(20px); }
+    .card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+    .card h3 i { font-size: 1.1rem; }
+
+    .status-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .status-row:last-child { border-bottom: none; }
+    .status-label { color: var(--text2); font-size: 0.9rem; }
+    .status-value { font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot.ok { background: var(--green); box-shadow: 0 0 10px rgba(0,201,167,0.5); }
+    .dot.err { background: var(--red); box-shadow: 0 0 10px rgba(255,107,107,0.5); }
+    .dot.warn { background: var(--yellow); box-shadow: 0 0 10px rgba(255,217,61,0.5); }
+
+    .big-number { font-size: 2.5rem; font-weight: 800; line-height: 1; }
+    .big-label { color: var(--text2); font-size: 0.85rem; margin-top: 6px; }
+
+    .btn { padding: 10px 20px; border: none; border-radius: 12px; cursor: pointer; font-size: 0.85rem; font-weight: 600; font-family: 'Inter', sans-serif; transition: all 0.3s; display: inline-flex; align-items: center; gap: 8px; }
+    .btn:hover { transform: translateY(-2px); }
+    .btn-danger { background: var(--red); color: #fff; }
+    .btn-success { background: var(--green); color: #fff; }
+    .btn-accent { background: var(--accent); color: #fff; box-shadow: 0 4px 20px var(--accent-glow); }
+    .btn-ghost { background: rgba(255,255,255,0.06); color: var(--text2); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    .actions-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+
+    .query-box { width: 100%; min-height: 100px; padding: 14px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 12px; color: var(--green); font-family: 'Courier New', monospace; font-size: 0.9rem; resize: vertical; outline: none; }
+    .query-box:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+
+    .result-box { margin-top: 16px; max-height: 300px; overflow: auto; border-radius: 12px; border: 1px solid var(--border); }
+    .result-box table { width: 100%; border-collapse: collapse; }
+    .result-box th { padding: 10px 14px; text-align: left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text2); background: rgba(255,255,255,0.03); position: sticky; top: 0; }
+    .result-box td { padding: 10px 14px; font-size: 0.85rem; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .result-info { padding: 12px 16px; color: var(--text2); font-size: 0.85rem; }
+
+    .toast-container { position: fixed; top: 24px; right: 24px; z-index: 2000; display: flex; flex-direction: column; gap: 12px; }
+    .toast { background: #1a1a2e; border: 1px solid var(--border); border-radius: 14px; padding: 16px 20px; display: flex; align-items: center; gap: 12px; min-width: 280px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); animation: slideIn 0.4s ease-out; backdrop-filter: blur(20px); }
+    .toast.success { border-left: 3px solid var(--green); }
+    .toast.error { border-left: 3px solid var(--red); }
+    .toast.info { border-left: 3px solid var(--accent); }
+    .toast i { font-size: 1.2rem; }
+    .toast.success i { color: var(--green); }
+    .toast.error i { color: var(--red); }
+    .toast.info i { color: var(--accent); }
+    .toast .toast-text { flex: 1; font-size: 0.9rem; }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(100px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes slideOut { from { opacity: 1; } to { opacity: 0; transform: translateX(100px); } }
+
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+    .modal-overlay.active { opacity: 1; pointer-events: all; }
+    .modal { background: #1a1a2e; border: 1px solid var(--border); border-radius: 24px; padding: 32px; width: 90%; max-width: 420px; text-align: center; transform: scale(0.9); transition: transform 0.3s; }
+    .modal-overlay.active .modal { transform: scale(1); }
+
+    .freq-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    .freq-col h4 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text2); margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+    .freq-col h4 .count { background: rgba(255,255,255,0.08); padding: 2px 8px; border-radius: 8px; font-weight: 700; }
+    .backup-item { padding: 10px 12px; background: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.05); font-size: 0.78rem; }
+    .backup-item .b-nombre { font-weight: 600; word-break: break-all; }
+    .backup-item .b-meta { color: var(--text2); margin-top: 2px; }
+    .backup-empty { color: var(--text2); font-size: 0.8rem; text-align: center; padding: 16px 0; }
+    @media (max-width: 900px) { .freq-grid { grid-template-columns: 1fr 1fr; } }
+
+    @media (max-width: 768px) {
+      .grid-3, .grid-2 { grid-template-columns: 1fr; }
+      .top-bar { flex-direction: column; gap: 16px; }
+      .top-bar .links { width: 100%; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-anim"><div class="c"></div><div class="c"></div><div class="c"></div></div>
+
+  <div class="container">
+    <div class="top-bar">
+      <h1><i class="fas fa-database" style="-webkit-text-fill-color:var(--accent);"></i> Panel de Administración</h1>
+      <div class="links">
+        <a href="/"><i class="fas fa-store"></i> Tienda</a>
+        <a href="/admin.html" class="active"><i class="fas fa-cog"></i> Admin</a>
+      </div>
+    </div>
+
+    <!-- Estado del servidor -->
+    <div class="grid-3">
+      <div class="card" style="text-align:center;">
+        <h3 style="justify-content:center;"><i class="fas fa-server" style="color:var(--accent);"></i> Servidor SQL</h3>
+        <div id="statusServer"><div class="dot err" style="margin:0 auto 10px;"></div><div class="big-label">Verificando...</div></div>
+      </div>
+      <div class="card" style="text-align:center;">
+        <h3 style="justify-content:center;"><i class="fas fa-database" style="color:var(--green);"></i> Base de Datos</h3>
+        <div id="statusDB"><div class="dot warn" style="margin:0 auto 10px;"></div><div class="big-label">Verificando...</div></div>
+      </div>
+      <div class="card" style="text-align:center;">
+        <h3 style="justify-content:center;"><i class="fas fa-table" style="color:var(--yellow);"></i> Tabla Productos</h3>
+        <div id="statusTable"><div class="dot warn" style="margin:0 auto 10px;"></div><div class="big-label">Verificando...</div></div>
+      </div>
+    </div>
+
+    <!-- Stats grandes -->
+    <div class="grid-2">
+      <div class="card" style="text-align:center;">
+        <div class="big-number" style="color:var(--accent);" id="statProductos">0</div>
+        <div class="big-label">Productos Registrados</div>
+      </div>
+      <div class="card" style="text-align:center;">
+        <div class="big-number" style="color:var(--green);" id="statStock">0</div>
+        <div class="big-label">Stock Total</div>
+      </div>
+    </div>
+
+    <!-- Acciones + Consulta SQL -->
+    <div class="grid-2">
+      <div class="card">
+        <h3><i class="fas fa-bolt" style="color:var(--yellow);"></i> Acciones Rápidas</h3>
+        <p style="color:var(--text2);font-size:0.85rem;margin-bottom:12px;">Crear backup manual de una frecuencia (para probarlas sin esperar el temporizador real)</p>
+        <div class="actions-row">
+          <button class="btn btn-accent" onclick="ejecutarBackup('5min')"><i class="fas fa-download"></i> Backup 5min</button>
+          <button class="btn btn-accent" onclick="ejecutarBackup('1hour')"><i class="fas fa-download"></i> Backup 1hora</button>
+          <button class="btn btn-accent" onclick="ejecutarBackup('daily')"><i class="fas fa-download"></i> Backup diario</button>
+          <button class="btn btn-accent" onclick="ejecutarBackup('manual')"><i class="fas fa-download"></i> Backup manual</button>
+        </div>
+        <p style="color:var(--text2);font-size:0.85rem;margin:16px 0 12px;">Simular pérdida y restaurar desde la nube</p>
+        <div class="actions-row">
+          <button class="btn btn-danger" onclick="simularPerdida()"><i class="fas fa-trash-alt"></i> Eliminar Productos</button>
+          <button class="btn btn-danger" style="background:linear-gradient(135deg,#b71c1c,#e53935);" onclick="eliminarBaseDatos()"><i class="fas fa-skull-crossbones"></i> Eliminar BD Completa</button>
+          <select id="restoreFreq" style="padding:10px 14px;border-radius:12px;background:rgba(255,255,255,0.06);color:var(--text);border:1px solid var(--border);font-family:'Inter',sans-serif;font-size:0.85rem;">
+            <option value="">Más reciente (cualquier frecuencia)</option>
+            <option value="5min">Frecuencia: 5 min</option>
+            <option value="1hour">Frecuencia: 1 hora</option>
+            <option value="daily">Frecuencia: diario</option>
+            <option value="manual">Frecuencia: manual</option>
+          </select>
+          <button class="btn btn-success" onclick="ejecutarRestore()"><i class="fas fa-cloud-upload-alt"></i> Restaurar desde Nube</button>
+          <button class="btn btn-ghost" onclick="cargarTodo()"><i class="fas fa-sync"></i> Actualizar</button>
+        </div>
+        <div id="accionResultado" style="margin-top:16px;padding:14px;background:rgba(0,0,0,0.3);border-radius:12px;display:none;font-family:'Courier New',monospace;font-size:0.85rem;color:var(--green);white-space:pre-wrap;max-height:200px;overflow:auto;"></div>
+      </div>
+
+      <div class="card">
+        <h3><i class="fas fa-terminal" style="color:var(--green);"></i> Consulta SQL</h3>
+        <p style="color:var(--text2);font-size:0.85rem;margin-bottom:12px;">Solo consultas SELECT permitidas</p>
+        <textarea class="query-box" id="sqlQuery" placeholder="SELECT * FROM Productos">SELECT * FROM Productos</textarea>
+        <div class="actions-row">
+          <button class="btn btn-accent" onclick="ejecutarConsulta()"><i class="fas fa-play"></i> Ejecutar</button>
+          <button class="btn btn-ghost" onclick="limpiarResultado()"><i class="fas fa-eraser"></i> Limpiar</button>
+        </div>
+        <div class="result-box" id="resultBox" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- Backups en la nube, por frecuencia -->
+    <div class="card" style="animation:fadeUp 0.8s;">
+      <h3><i class="fab fa-google-drive" style="color:var(--blue);"></i> Backups en Google Drive (por frecuencia)</h3>
+      <p style="color:var(--text2);font-size:0.85rem;margin-bottom:16px;">gdrive:BackupsTienda — así se comparan las 3 frecuencias exigidas por la rúbrica</p>
+      <div class="freq-grid" id="freqGrid">
+        <div class="freq-col"><h4>5 min <span class="count" id="count5min">0</span></h4><div id="list5min"></div></div>
+        <div class="freq-col"><h4>1 hora <span class="count" id="count1hour">0</span></h4><div id="list1hour"></div></div>
+        <div class="freq-col"><h4>Diario <span class="count" id="countdaily">0</span></h4><div id="listdaily"></div></div>
+        <div class="freq-col"><h4>Manual <span class="count" id="countmanual">0</span></h4><div id="listmanual"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <div class="modal-overlay" id="modalConfirm">
+    <div class="modal">
+      <div style="margin-bottom:20px;">
+        <div id="modalIcon" style="width:64px;height:64px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px;"></div>
+        <h3 id="modalTitle" style="margin-bottom:8px;"></h3>
+        <p id="modalDesc" style="color:var(--text2);font-size:0.9rem;"></p>
+      </div>
+      <div style="display:flex;gap:12px;justify-content:center;">
+        <button class="btn btn-ghost" onclick="cerrarModal()">Cancelar</button>
+        <button class="btn" id="modalConfirmBtn" onclick="">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_ADMIN = "/api/admin";
+
+    function toast(msg, tipo = "success") {
+      const icons = { success: "fa-check-circle", error: "fa-exclamation-circle", info: "fa-info-circle" };
+      const c = document.getElementById("toastContainer");
+      const el = document.createElement("div");
+      el.className = `toast ${tipo}`;
+      el.innerHTML = `<i class="fas ${icons[tipo]}"></i><span class="toast-text">${msg}</span>`;
+      c.appendChild(el);
+      setTimeout(() => { el.style.animation = "slideOut 0.4s ease-in forwards"; setTimeout(() => el.remove(), 400); }, 3000);
+    }
+
+    function showResultado(texto, ok = true) {
+      const el = document.getElementById("accionResultado");
+      el.style.display = "block";
+      el.style.color = ok ? "var(--green)" : "var(--red)";
+      el.textContent = texto;
+    }
+
+    async function cargarEstado() {
+      try {
+        const res = await fetch(`${API_ADMIN}/status`);
+        const s = await res.json();
+
+        document.getElementById("statusServer").innerHTML = s.server
+          ? '<div class="dot ok" style="margin:0 auto 10px;"></div><div class="big-number" style="font-size:1.2rem;color:var(--green);">Activo</div>'
+          : '<div class="dot err" style="margin:0 auto 10px;"></div><div class="big-number" style="font-size:1.2rem;color:var(--red);">Offline</div>';
+
+        document.getElementById("statusDB").innerHTML = s.dbExists
+          ? '<div class="dot ok" style="margin:0 auto 10px;"></div><div class="big-number" style="font-size:1.2rem;color:var(--green);">' + s.database + '</div>'
+          : '<div class="dot err" style="margin:0 auto 10px;"></div><div class="big-number" style="font-size:1.2rem;color:var(--red);">No existe</div>';
+
+        document.getElementById("statusTable").innerHTML = s.tableExists
+          ? '<div class="dot ok" style="margin:0 auto 10px;"></div><div class="big-number" style="font-size:1.2rem;color:var(--green);">Productos</div>'
+          : '<div class="dot err" style="margin:0 auto 10px;"></div><div class="big-number" style="font-size:1.2rem;color:var(--red);">No existe</div>';
+
+        document.getElementById("statProductos").textContent = s.productCount;
+        document.getElementById("statStock").textContent = s.totalStock;
+      } catch (e) {
+        document.getElementById("statusServer").innerHTML = '<div class="dot err" style="margin:0 auto 10px;"></div><div class="big-number" style="font-size:1.2rem;color:var(--red);">Error</div>';
+      }
+    }
+
+    async function cargarBackupsNube() {
+      try {
+        const res = await fetch(`${API_ADMIN}/backups-nube`);
+        const data = await res.json();
+        for (const freq of ["5min", "1hour", "daily", "manual"]) {
+          const items = data[freq] || [];
+          document.getElementById(`count${freq}`).textContent = items.length;
+          const cont = document.getElementById(`list${freq}`);
+          cont.innerHTML = items.length
+            ? items.map(b => `
+                <div class="backup-item">
+                  <div class="b-nombre">${b.nombre}</div>
+                  <div class="b-meta">${b.tamano} · ${b.fecha}</div>
+                </div>`).join("")
+            : '<div class="backup-empty">Sin backups aún</div>';
+        }
+      } catch (e) {
+        console.error("Error cargando backups de la nube", e);
+      }
+    }
+
+    async function cargarTodo() {
+      await Promise.all([cargarEstado(), cargarBackupsNube()]);
+      toast("Datos actualizados", "info");
+    }
+
+    async function ejecutarBackup(frecuencia) {
+      showResultado(`Creando backup [${frecuencia}] y subiéndolo a Google Drive...`);
+      try {
+        const res = await fetch(`${API_ADMIN}/backup`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ frecuencia }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          showResultado(`✅ Backup [${frecuencia}] creado y subido: ${data.archivo}\nTamaño: ${(data.tamano/1024).toFixed(1)} KB`);
+          toast(`Backup [${frecuencia}] subido a la nube`);
+          cargarBackupsNube();
+        } else {
+          showResultado(`❌ ${data.error}`, false);
+          toast("Error al crear backup", "error");
+        }
+      } catch (e) {
+        showResultado("❌ Error de conexión", false);
+        toast("Error al crear backup", "error");
+      }
+    }
+
+    async function ejecutarRestore() {
+      const frecuencia = document.getElementById("restoreFreq").value;
+      const etiqueta = frecuencia ? `de la frecuencia "${frecuencia}"` : "más reciente (cualquier frecuencia)";
+      showModal("fas fa-cloud-upload-alt", "¿Restaurar desde Google Drive?", `Se descargará el backup ${etiqueta} y se restaurará la BD.`, "var(--green)", async () => {
+        showResultado(`Descargando backup ${etiqueta} desde Google Drive...`);
+        try {
+          const res = await fetch(`${API_ADMIN}/restore`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ frecuencia: frecuencia || undefined }),
+          });
+          const data = await res.json();
+          if (data.ok) {
+            showResultado(`✅ Base de datos restaurada\nArchivo: ${data.archivo} (frecuencia: ${data.frecuencia})\nTamaño: ${data.tamano}`);
+            toast("Base de datos restaurada desde la nube");
+            cargarTodo();
+            document.getElementById("sqlQuery").value = "SELECT * FROM Productos";
+            setTimeout(() => ejecutarConsulta(), 500);
+          } else {
+            showResultado(`❌ Error: ${data.error}`, false);
+            toast("Error al restaurar", "error");
+          }
+        } catch (e) {
+          showResultado("❌ Error de conexión con el servidor", false);
+          toast("Error al restaurar", "error");
+        }
+      });
+    }
+
+    async function eliminarBaseDatos() {
+      showModal("fas fa-skull-crossbones", "¿Eliminar la base de datos completa?", "Se eliminará la BD Tienda completa. Luego usa 'Restaurar desde Nube' para recuperarla.", "#b71c1c", async () => {
+        try {
+          showResultado("Eliminando base de datos...");
+          const res = await fetch(`${API_ADMIN}/drop-db`, { method: "POST" });
+          const data = await res.json();
+          if (!res.ok) { showResultado(`❌ ${data.error}`, false); toast("Error al eliminar", "error"); return; }
+          toast("Base de datos eliminada");
+          showResultado("⚠️ Base de datos 'Tienda' eliminada completamente\nUsa 'Restaurar desde Nube' para recuperarla");
+          cargarEstado();
+        } catch (e) { toast("Error", "error"); }
+      });
+    }
+
+    async function ejecutarConsulta() {
+      const query = document.getElementById("sqlQuery").value.trim();
+      if (!query) { toast("Escribe una consulta", "error"); return; }
+      const box = document.getElementById("resultBox");
+      try {
+        const res = await fetch(`${API_ADMIN}/query`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query }),
+        });
+        const data = await res.json();
+        if (!res.ok) { box.innerHTML = `<div class="result-info" style="color:var(--red);">${data.error}</div>`; box.style.display = "block"; return; }
+        if (data.rows.length === 0) { box.innerHTML = '<div class="result-info">Sin resultados</div>'; box.style.display = "block; return"; }
+        const cols = Object.keys(data.rows[0]);
+        box.innerHTML = `
+          <div class="result-info">${data.count} fila(s) encontrada(s)</div>
+          <table><thead><tr>${cols.map(c => `<th>${c}</th>`).join("")}</tr></thead>
+          <tbody>${data.rows.map(r => `<tr>${cols.map(c => `<td>${r[c] !== null ? r[c] : '<span style="color:var(--text2)">NULL</span>'}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+        box.style.display = "block";
+        toast(`${data.count} fila(s) encontrada(s)`, "info");
+      } catch (e) { toast("Error al ejecutar consulta", "error"); }
+    }
+
+    function limpiarResultado() {
+      document.getElementById("resultBox").style.display = "none";
+      document.getElementById("resultBox").innerHTML = "";
+    }
+
+    function showModal(icono, titulo, desc, color, callback) {
+      const overlay = document.getElementById("modalConfirm");
+      document.getElementById("modalIcon").innerHTML = `<i class="${icono}" style="font-size:1.5rem;color:${color};"></i>`;
+      document.getElementById("modalIcon").style.background = `${color}22`;
+      document.getElementById("modalTitle").textContent = titulo;
+      document.getElementById("modalDesc").textContent = desc;
+      const btn = document.getElementById("modalConfirmBtn");
+      btn.style.background = color;
+      btn.style.color = "#fff";
+      btn.onclick = () => { cerrarModal(); callback(); };
+      overlay.classList.add("active");
+    }
+
+    function cerrarModal() { document.getElementById("modalConfirm").classList.remove("active"); }
+
+    async function simularPerdida() {
+      showModal("fas fa-trash-alt", "¿Eliminar todos los productos?", "Se borrarán todos los productos de la tabla.", "var(--red)", async () => {
+        try {
+          await fetch(`${API_ADMIN}/delete-all`, { method: "POST" });
+          toast("Todos los productos fueron eliminados");
+          showResultado("⚠️ Todos los productos eliminados de la tabla");
+          cargarEstado();
+          document.getElementById("sqlQuery").value = "SELECT * FROM Productos";
+          ejecutarConsulta();
+        } catch (e) { toast("Error", "error"); }
+      });
+    }
+
+    document.getElementById("modalConfirm").addEventListener("click", (e) => { if (e.target === e.currentTarget) cerrarModal(); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") cerrarModal(); });
+
+    cargarTodo();
+    setInterval(cargarEstado, 30000);
+  </script>
+</body>
+</html>
