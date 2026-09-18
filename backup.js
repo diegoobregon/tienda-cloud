@@ -2,6 +2,7 @@ const { execFile } = require("child_process");
 const { promisify } = require("util");
 const fs = require("fs");
 const path = require("path");
+const { Pool } = require("pg");
 
 const execFileAsync = promisify(execFile);
 
@@ -146,6 +147,35 @@ async function eliminarBaseDatos(pool) {
   await pool.query("DROP TABLE IF EXISTS productos");
 }
 
+// Versión más agresiva: borra y recrea la base de datos "neondb" completa
+// (no solo la tabla). Requiere una segunda conexión a la base "postgres" de
+// mantenimiento del mismo proyecto, porque Postgres no permite borrar la
+// base a la que uno mismo está conectado.
+async function eliminarBaseDatosCompleta() {
+  const url = new URL(process.env.DATABASE_URL);
+  const dbName = url.pathname.replace(/^\//, "");
+
+  const urlMantenimiento = new URL(process.env.DATABASE_URL);
+  urlMantenimiento.pathname = "/postgres";
+
+  const admin = new Pool({
+    connectionString: urlMantenimiento.toString(),
+    ssl: { rejectUnauthorized: false },
+  });
+  admin.on("error", (err) => console.log("[NEON] Error de fondo (ignorado):", err.message));
+
+  try {
+    await admin.query(
+      "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = $1 AND pid <> pg_backend_pid()",
+      [dbName]
+    );
+    await admin.query(`DROP DATABASE IF EXISTS "${dbName}"`);
+    await admin.query(`CREATE DATABASE "${dbName}"`);
+  } finally {
+    await admin.end();
+  }
+}
+
 async function existeBaseDatos(pool) {
   try {
     const r = await pool.query(
@@ -221,6 +251,7 @@ module.exports = {
   listarBackupsNube,
   restaurarDesdeNube,
   eliminarBaseDatos,
+  eliminarBaseDatosCompleta,
   existeBaseDatos,
   iniciarBackupsAutomaticos,
 };

@@ -169,6 +169,7 @@
         <div class="actions-row">
           <button class="btn btn-danger" onclick="simularPerdida()"><i class="fas fa-trash-alt"></i> Eliminar Productos</button>
           <button class="btn btn-danger" style="background:linear-gradient(135deg,#b71c1c,#e53935);" onclick="eliminarBaseDatos()"><i class="fas fa-skull-crossbones"></i> Eliminar BD Completa</button>
+          <button class="btn btn-danger" style="background:linear-gradient(135deg,#4a148c,#7b1fa2);" onclick="eliminarBaseDatosNeon()"><i class="fas fa-radiation"></i> Eliminar Neon Completo</button>
           <select id="restoreFreq" style="padding:10px 14px;border-radius:12px;background:rgba(255,255,255,0.06);color:var(--text);border:1px solid var(--border);font-family:'Inter',sans-serif;font-size:0.85rem;">
             <option value="">Más reciente (cualquier frecuencia)</option>
             <option value="5min">Frecuencia: 5 min</option>
@@ -354,6 +355,20 @@
           if (!res.ok) { showResultado(`❌ ${data.error}`, false); toast("Error al eliminar", "error"); return; }
           toast("Base de datos eliminada");
           showResultado("⚠️ Base de datos 'Tienda' eliminada completamente\nUsa 'Restaurar desde Nube' para recuperarla");
+          cargarEstado();
+        } catch (e) { toast("Error", "error"); }
+      });
+    }
+
+    async function eliminarBaseDatosNeon() {
+      showModal("fas fa-radiation", "¿Eliminar la base de datos de Neon completa?", "Se borra y recrea 'neondb' desde cero (no solo la tabla). Luego usa 'Restaurar desde Nube' para recuperarla.", "#7b1fa2", async () => {
+        try {
+          showResultado("Eliminando y recreando la base de datos de Neon...");
+          const res = await fetch(`${API_ADMIN}/drop-db-neon`, { method: "POST" });
+          const data = await res.json();
+          if (!res.ok) { showResultado(`❌ ${data.error}`, false); toast("Error al eliminar", "error"); return; }
+          toast("Base de datos de Neon eliminada y recreada");
+          showResultado("⚠️ Base de datos 'neondb' eliminada y recreada completamente\nUsa 'Restaurar desde Nube' para recuperarla");
           cargarEstado();
         } catch (e) { toast("Error", "error"); }
       });

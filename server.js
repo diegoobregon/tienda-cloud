@@ -13,6 +13,9 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
 });
+// Sin esto, un error de fondo en una conexión inactiva del pool (por ejemplo,
+// si algo la cierra a la fuerza) tumba todo el proceso de Node.
+pool.on("error", (err) => console.log("[DB] Error de fondo (recuperado):", err.message));
 
 async function initDB() {
   await pool.query(`
@@ -174,6 +177,17 @@ app.post("/api/admin/drop-db", async (req, res) => {
   try {
     await backup.eliminarBaseDatos(pool);
     res.json({ message: "Tabla de datos eliminada completamente" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Versión más agresiva: borra y recrea la base de datos "neondb" completa
+// (no solo la tabla productos). Botón aparte del anterior, a propósito.
+app.post("/api/admin/drop-db-neon", async (req, res) => {
+  try {
+    await backup.eliminarBaseDatosCompleta();
+    res.json({ message: "Base de datos de Neon eliminada y recreada completamente" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
